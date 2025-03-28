@@ -11,7 +11,7 @@
 
 			// The domain you'd like to use.
 			// https://github.com/aStonePenguin/ShareX-Worker/blob/master/README.md#custom-domain---required
-			"pattern": "thiccwaifu.com", /* CHANGE THIS */
+			"pattern": "i.thiccwaifu.com", /* CHANGE THIS */
 			"custom_domain": true
 		}
 	],

@@ -63,17 +63,16 @@ Settings that are marked as optional do not need to be changed if you don't want
 - This the secret key used to to sign session cookies. Use a password generator, mash your keyboard or use [this](https://generate-random.org/api-key-generator?count=2&length=256&type=mixed-numbers) until you have something between 256 and 512 characters.
 
 #### `SESSION_TTL` - ***Optional***
-- How long in seconds you will stay logged in. Default is 2 weeks.
-
+- How long in seconds you will stay logged in. Default is 3 months.
 #### `SHARE_SLUG_FILE_EXT` - ***Optional***
 - true or false
 - Determines whether to append the file extension of the file you have uploaded to the URL. Whether this is enabled or not share URLs with file extensions of any type will still load. Example: yourdomain.com/thisIsTheSlug.png or yourdomain.com/thisIsTheSlug
 
-#### `SHARE_SLUG_LEN_MAX` - ***Optional***
-- The max length of the url slug. Exmaple yourdomain.com/thisIsTheSlug
-
 #### `SHARE_SLUG_LEN_MIN` - ***Optional***
-- The min length of the url slu. Exmaple yourdomain.com/thisIsTheSlug
+- The min length of the url slug. Must be greater than default. Default is 6. Exmaple yourdomain.com/thisIsTheSlug
+
+#### `SHARE_SLUG_LEN_MAX` - ***Optional***
+- The max length of the url slug. Must be greater than or equal to [`SHARE_SLUG_LEN_MIN`](https://github.com/aStonePenguin/ShareX-Worker#share_slug_len_min---optional). Default is 10. Exmaple yourdomain.com/thisIsTheSlug
 
 #### `SHARE_TTL` - ***Optional***
 - How long to store files and shortened URLs for in seconds before automatically deleting them. Default is 2 weeks.
@@ -108,7 +107,8 @@ Settings that are marked as optional do not need to be changed if you don't want
 
 ## Editing / Contributing
 - Edit `wrangler.jsonc` with the settings above.
-- Create a .dev.vars file with an api and sesssion key.
+- Create a .dev.vars file with an [`API_KEY`](https://github.com/aStonePenguin/ShareX-Worker/blob/master/README.md#api_key---required) and [`SESSION_KEY`](https://github.com/aStonePenguin/ShareX-Worker/blob/master/README.md#session_key---required)
+- Add `DEV_MODE="true"` to your .dev.vars file for local testing. Never set this when deploying.
 
 ### Install
 ```sh

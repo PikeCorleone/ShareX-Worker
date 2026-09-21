@@ -24,11 +24,11 @@ import {
 import { Button } from '@/components/ui/button';
 
 import {
-	Copy,
+	ClipboardCopy,
 	FilePlus2,
 	Link,
 	Trash2
-} from 'lucide-vue-next';
+} from '@lucide/vue';
 
 import { useApiStore } from '@/stores/api';
 const apiStore = useApiStore();
@@ -55,7 +55,7 @@ const diagUpdate = (open: boolean) => {
 					<SidebarMenu>
 						<SidebarMenuItem v-show="!apiStore.activeShare?.isUrl()">
 							<SidebarMenuButton tooltip="Copy URL" class="px-2.5 md:px-2" @click="copyUrl">
-								<Copy />
+								<ClipboardCopy />
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 

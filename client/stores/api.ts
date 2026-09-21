@@ -110,6 +110,27 @@ export const useApiStore = defineStore('api', {
 			}
 		},
 
+		async deleteShare(urlSlug: string, deletetionKey: string): Promise<boolean>
+		{
+			const result: ApiResponse = await Http.get('delete/' + urlSlug + '/' + deletetionKey);
+
+			return result.error == null;
+
+			// error checking here!
+		},
+
+		async bulkDeleteShares(urlSlugs: string[]): Promise<boolean>
+		{
+			const result: ApiResponse = await Http.post('deletebulk', {
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ urlSlugs }),
+			});
+
+			return result.error == null;
+
+			// error checking here!
+		},
+
 		async uploadFile(file: File): Promise<any>
 		{
 			const result = await Http.post('upload', {

@@ -5,16 +5,24 @@ import mime from 'mime-types';
 class Helpers extends SharedHelpers {
 	protected static chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
+	public static isDevMode(env: Env): boolean
+	{
+		return env.DEV_MODE === 'true';
+	}
+
 	public static randomChars(lenMin: number, lenMax: number): string
 	{
 		lenMin = Math.min(lenMin, lenMax);
 		lenMax = Math.max(lenMax, lenMin);
 
-		const len = Math.floor(Math.random() * (lenMax - lenMin + 1) + lenMin);
+		const range = lenMax - lenMin + 1;
+		const len = lenMin + (crypto.getRandomValues(new Uint32Array(1))[0] % range);
+
+		const bytes = crypto.getRandomValues(new Uint8Array(len));
 
 		let result = '';
 		for (let i = 0; i < len; i++)
-			result += this.chars.charAt(Math.floor(Math.random() * this.chars.length));
+			result += this.chars.charAt(bytes[i] % this.chars.length);
 
 		return result;
 	}
@@ -29,11 +37,6 @@ class Helpers extends SharedHelpers {
 		);
 
 		return Helpers.bufferToHex(digest);
-	}
-
-	public static getFileExtension(fileName: string): string
-	{
-		return fileName.split('.').pop() || fileName;
 	}
 
 	public static bufferToHex(buffer: ArrayBuffer): string

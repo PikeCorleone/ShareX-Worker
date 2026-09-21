@@ -24,10 +24,11 @@ import {
 	AlertTitle
 } from '@/components/ui/alert'
 
-import { Ban, Copy } from 'lucide-vue-next'
+import { Ban, ClipboardCopy } from '@lucide/vue'
 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import CenteredPage from '@/components/CenteredPage.vue'
 
 import { ref } from 'vue';
 import { useApiStore } from '@/stores/api';
@@ -61,7 +62,7 @@ const onSubmit = async () => {
 </script>
 
 <template>
-	<div class="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
+	<CenteredPage>
 		<Dialog v-model:open="dialogOpen">
 			<DialogContent class="sm:max-w-md">
 				<DialogHeader>
@@ -83,7 +84,7 @@ const onSubmit = async () => {
 					</div>
 					<Button type="submit" size="sm" class="px-3">
 					<span class="sr-only">Copy</span>
-					<Copy class="w-4 h-4" />
+					<ClipboardCopy class="w-4 h-4" />
 					</Button>
 				</div>
 				<DialogFooter class="sm:justify-start">
@@ -119,5 +120,5 @@ const onSubmit = async () => {
 				</CardFooter>
 			</Card>
 		</div>
-	</div>
+	</CenteredPage>
 </template>

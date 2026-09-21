@@ -6,19 +6,26 @@ import { Helpers } from './helpers';
 export class OpenGraphTagGen {
 	protected tags = '';
 
-	protected addTag(property: String, content: string)
+	protected addTag(property: string, content: string)
 	{
 		this.tags += '<meta property="' + property + '" content="' + content + '"/>\n';
 	}
 
-	protected addOgTag(property: String, content: string) // https://ogp.me/
+	protected addOgTag(property: string, content: string) // https://ogp.me/
 	{
 		this.addTag('og:' + property, content);
 	}
 
-	protected addXTag(property: String, content: string) // https://developer.x.com/en/docs/x-for-websites/cards/overview/markup
+	protected addXTag(property: string, content: string) // https://developer.x.com/en/docs/x-for-websites/cards/overview/markup
 	{
 		this.addTag('twitter:' + property, content);
+	}
+
+	// most embeds don't render svg previews, so use the png fileicon here
+	protected addFileIconImageTag(url: URL, share: Share)
+	{
+		this.addOgTag('image', url.origin + '/fileicon/png/' + share.fileExtension + '.png');
+		this.addOgTag('image:type:', 'image/png');
 	}
 
 	public getTags(url: URL, share: Share): string
@@ -33,8 +40,7 @@ export class OpenGraphTagGen {
 			this.addOgTag('video', share.fileUrl);
 			this.addOgTag('video:type:', share.contentType!);
 
-			this.addOgTag('image', url.origin + '/svg/' + share.fileExtension + '.svg');
-			this.addOgTag('image:type:', 'image/svg+xml');
+			this.addFileIconImageTag(url, share);
 		}
 		else if (share.isAudio())
 		{
@@ -43,8 +49,7 @@ export class OpenGraphTagGen {
 			this.addOgTag('audio', share.fileUrl);
 			this.addOgTag('audio:type:', share.contentType!);
 
-			this.addOgTag('image', url.origin + '/svg/' + share.fileExtension + '.svg');
-			this.addOgTag('image:type:', 'image/svg+xml');
+			this.addFileIconImageTag(url, share);
 		}
 		else if (share.isImage())
 		{
@@ -58,8 +63,7 @@ export class OpenGraphTagGen {
 		else if (share.isText() || share.isFile())
 		{
 			this.addOgTag('type', 'website');
-			this.addOgTag('image', url.origin + '/svg/' + share.fileExtension + '.svg');
-			this.addOgTag('image:type:', 'image/svg+xml');
+			this.addFileIconImageTag(url, share);
 		}
 
 		return this.tags

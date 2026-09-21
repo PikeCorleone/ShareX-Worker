@@ -2,31 +2,21 @@
 import type {
 	ColumnDef,
 	ColumnFiltersState,
-	VisibilityState,
 } from '@tanstack/vue-table'
 
 import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from '@/components/ui/table'
-import {
-	FlexRender,
 	getCoreRowModel,
 	getFilteredRowModel,
 	getPaginationRowModel,
-	getSortedRowModel,
 	useVueTable,
 } from '@tanstack/vue-table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Trash2 } from '@lucide/vue'
 
-import ShareDropdown from './ShareDropdown.vue'
+import ShareCard from './ShareCard.vue'
 
-import { h, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { valueUpdater } from '@/lib/utils'
 import type { Shareable } from '~/share'
 
@@ -35,117 +25,172 @@ const apiStore = useApiStore();
 
 const data = ref<Shareable[]>([]);
 
+apiStore.isPageLoaded = false;
+
 onMounted(async () => {
 	data.value = await apiStore.getShares();
+	apiStore.isPageLoaded = true;
 })
+
+const selectedSlugs = ref<Set<string>>(new Set());
+const deletingSlugs = ref<Set<string>>(new Set());
+
+const toggleSelect = (urlSlug: string, selected: boolean) => {
+	if (selected)
+		selectedSlugs.value.add(urlSlug);
+	else
+		selectedSlugs.value.delete(urlSlug);
+
+	selectedSlugs.value = new Set(selectedSlugs.value);
+}
+
+const deleteSelected = async () => {
+	const urlSlugs = [...selectedSlugs.value];
+
+	deletingSlugs.value = new Set(urlSlugs);
+
+	if (await apiStore.bulkDeleteShares(urlSlugs))
+	{
+		data.value = data.value.filter(s => !selectedSlugs.value.has(s.urlSlug!));
+		selectedSlugs.value = new Set();
+		await clampPageIndex();
+	}
+
+	deletingSlugs.value = new Set();
+}
 
 const columns: ColumnDef<Shareable>[] = [
 	{
-		accessorKey: 'creationDate',
-		header: 'Created',
-		cell: ({ row }) => {
-			const date = new Date(row.getValue('creationDate'));
-
-			return date.toLocaleDateString() + ' - ' + date.toLocaleTimeString();
-		}
-	},
-
-	{
-		accessorKey: 'type',
-		header: 'Type',
-		cell: ({ row }) => row.original.url ? 'URL' : 'File',
-	},
-	{
 		id: 'content',
 		accessorKey: 'fileName',
-		header: 'Content',
-		cell: ({ row }) => row.original.url ?? row.original.fileName,
 		filterFn: (row, columnId, filterValue) => {
 			return (row.original.url ?? row.original.fileName)?.toLowerCase().includes(filterValue.toLowerCase()) ?? false;
-		},
-	},
-
-	{
-		id: 'actions',
-		enableHiding: false,
-		cell: ({ row }) => {
-			const share = row.original;
-			return h(ShareDropdown, {
-				share
-			})
 		},
 	},
 ]
 
 const columnFilters = ref<ColumnFiltersState>([])
-const columnVisibility = ref<VisibilityState>({})
 
 const table = useVueTable({
 	data,
 	columns,
+	getRowId: row => row.urlSlug!,
 	getCoreRowModel: getCoreRowModel(),
 	getPaginationRowModel: getPaginationRowModel(),
-	getSortedRowModel: getSortedRowModel(),
 	getFilteredRowModel: getFilteredRowModel(),
-	onColumnFiltersChange: updaterOrValue => valueUpdater(updaterOrValue, columnFilters),
-	onColumnVisibilityChange: updaterOrValue => valueUpdater(updaterOrValue, columnVisibility),
+	autoResetPageIndex: false,
+	onColumnFiltersChange: updaterOrValue => {
+		valueUpdater(updaterOrValue, columnFilters);
+		table.setPageIndex(0);
+	},
 	state: {
 		get columnFilters() { return columnFilters.value },
-		get columnVisibility() { return columnVisibility.value },
 	},
 	initialState: {
 		pagination: {
-			pageSize: 20
+			pageSize: 24
 		},
 	}
 })
+
+const clampPageIndex = async () => {
+	await nextTick();
+
+	const maxPageIndex = Math.max(0, table.getPageCount() - 1);
+
+	if (table.getState().pagination.pageIndex > maxPageIndex)
+		table.setPageIndex(maxPageIndex);
+}
+
+const removeShare = (urlSlug: string) => {
+	data.value = data.value.filter(s => s.urlSlug !== urlSlug);
+
+	if (selectedSlugs.value.delete(urlSlug))
+		selectedSlugs.value = new Set(selectedSlugs.value);
+
+	clampPageIndex();
+}
+
+const pageUrlSlugs = computed(() => table.getRowModel().rows.map(row => row.original.urlSlug!));
+
+const selectAllOnPage = () => {
+	const newSelection = new Set(selectedSlugs.value);
+
+	pageUrlSlugs.value.forEach(urlSlug => newSelection.add(urlSlug));
+
+	selectedSlugs.value = newSelection;
+}
+
+const deselectAll = () => {
+	selectedSlugs.value = new Set();
+}
 </script>
 
 <template>
 	<div class="w-full h-full">
-		<div class="flex items-center py-4">
+		<div class="flex items-center gap-2 py-4">
 			<Input
 				class="max-w-sm"
 				placeholder="Search shares..."
 				:model-value="table.getColumn('content')?.getFilterValue() as string"
 				@update:model-value=" table.getColumn('content')?.setFilterValue($event)"
 			/>
-		</div>
-		<div class="rounded-md border">
-			<Table>
-				<TableHeader>
-					<TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-						<TableHead v-for="header in headerGroup.headers" :key="header.id">
-						<FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header" :props="header.getContext()" />
-						</TableHead>
-					</TableRow>
-				</TableHeader>
-				<TableBody>
-					<template v-if="table.getRowModel().rows?.length">
-						<template v-for="row in table.getRowModel().rows" :key="row.id">
-						<TableRow>
-							<TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-								<FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-							</TableCell>
-						</TableRow>
-						</template>
-					</template>
 
-					<TableRow v-else>
-						<TableCell
-							:colspan="columns.length"
-							class="h-24 text-center"
-							>
-							No results.
-						</TableCell>
-					</TableRow>
-				</TableBody>
-			</Table>
+			<Button
+				v-if="pageUrlSlugs.length > 0"
+				variant="outline"
+				size="sm"
+				@click="selectAllOnPage"
+			>
+				Select All
+			</Button>
+
+			<Button
+				v-if="selectedSlugs.size > 0"
+				variant="outline"
+				size="sm"
+				@click="deselectAll"
+			>
+				Deselect All
+			</Button>
+
+			<Button
+				v-if="selectedSlugs.size > 0"
+				variant="destructive"
+				size="sm"
+				:disabled="deletingSlugs.size > 0"
+				@click="deleteSelected"
+			>
+				<Trash2 class="w-4 h-4" />
+				Delete Selected ({{ selectedSlugs.size }})
+			</Button>
+		</div>
+
+		<div
+			v-if="table.getRowModel().rows?.length"
+			class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"
+		>
+			<ShareCard
+				v-for="row in table.getRowModel().rows"
+				:key="row.id"
+				:share="row.original"
+				:selected="selectedSlugs.has(row.original.urlSlug!)"
+				:deleting="deletingSlugs.has(row.original.urlSlug!)"
+				@deleted="removeShare"
+				@update:selected="selected => toggleSelect(row.original.urlSlug!, selected)"
+			/>
+		</div>
+
+		<div v-else class="h-24 flex items-center justify-center rounded-md border text-muted-foreground">
+			No results.
 		</div>
 
 		<div class="flex items-center justify-end space-x-2 py-4">
 			<div class="flex-1 text-sm text-muted-foreground">
-				{{ table.getFilteredRowModel().rows.length }} row(s) shown.
+				Showing {{ table.getRowModel().rows.length }} of {{ data.length }}
+			</div>
+			<div v-if="table.getPageCount() > 0" class="text-sm text-muted-foreground">
+				Page {{ table.getState().pagination.pageIndex + 1 }} of {{ table.getPageCount() }}
 			</div>
 			<div class="space-x-2">
 				<Button
@@ -167,4 +212,4 @@ const table = useVueTable({
 			</div>
 		</div>
 	</div>
-	</template>
+</template>
